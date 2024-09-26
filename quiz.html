@@ -22,13 +22,12 @@
         }
         #quiz-container {
             width: 90%;
-            max-width: 800px; /* Increased width */
+            max-width: 800px;
             margin: 20px auto;
             background: white;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 40px; /* Increased padding */
-            transition: transform 0.4s ease;
+            padding: 40px;
         }
         .hidden {
             display: none;
@@ -52,6 +51,60 @@
             width: 100%;
             border-radius: 5px;
         }
+        #progress-bar-container {
+            margin-top: 20px;
+            width: 90%;
+            max-width: 800px;
+            background-color: #ddd;
+            border-radius: 25px;
+        }
+        #progress-bar {
+            width: 0%;
+            height: 25px;
+            background-color: #4CAF50;
+            border-radius: 25px;
+            text-align: center;
+            color: white;
+            line-height: 25px;
+        }
+        #progress-percentage {
+            text-align: center;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        #popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #popup p {
+            margin-bottom: 20px;
+        }
+        #popup button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #certificate-container {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+        #certificate-container a {
+            font-size: 1.2em;
+            color: blue;
+            cursor: pointer;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -62,118 +115,242 @@
     <main>
         <div id="level-container">
             <h2>Select Difficulty Level</h2>
-            <select id="difficulty">
+            <select id="difficulty" disabled>
                 <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
+                <option value="average">Average</option>
                 <option value="hard">Difficult</option>
             </select>
-            <button id="start">Start Quiz</button>
+            <button id="start-quiz-btn">Start Quiz</button>
         </div>
 
         <div id="quiz-container" class="hidden">
             <h2 id="question"></h2>
-            <input type="number" id="answer" placeholder="Your answer" />
+            <button class="option-btn">Option 1</button>
+            <button class="option-btn">Option 2</button>
+            <button class="option-btn">Option 3</button>
+            <button class="option-btn">Option 4</button>
+
+            <div id="progress-bar-container">
+                <div id="progress-bar"></div>
+            </div>
+            <div id="progress-percentage">Progress: 0%</div>
         </div>
-        <button id="submit" class="hidden">Submit Answer</button>
-        <div id="result" class="hidden"></div>
+
+        <div id="popup">
+            <p id="solution"></p>
+            <button id="close-popup-btn">Close</button>
+        </div>
+
+        <div id="certificate-container">
+            <a id="print-certificate" onclick="printCertificate()">Print Certificate</a>
+        </div>
+
+        <!-- Audio Files -->
+        <audio id="correct-sound" src="audio/correct.mp3"></audio>
+        <audio id="wrong-sound" src="audio/wrong.mp3"></audio>
+        <audio id="background-music" src="audio/background.mp3" loop></audio>
+
     </main>
 
-    <footer>
-        <p>&copy; 2024 Integer Mastery. All Rights Reserved.</p>
-    </footer>
-
+    <!-- Firebase scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    
     <script>
-        const totalQuestions = 10;
-        let score = 0;
-        let currentQuestion = 0;
-        let questions = [];
-        let difficulty = "easy";
-        const quizContainer = document.getElementById('quiz-container');
-        const submitBtn = document.getElementById('submit');
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBmWpORtzUDjJaq_BW-Qsv69xYl6yJE2do",
+            authDomain: "gamefi-integer.firebaseapp.com",
+            databaseURL: "https://gamefi-integer-default-rtdb.firebaseio.com",
+            projectId: "gamefi-integer",
+            storageBucket: "gamefi-integer.appspot.com",
+            messagingSenderId: "1001928239471",
+            appId: "1:1001928239471:web:337f34480a33d6ae21a09a"
+        };
 
-        document.getElementById('start').addEventListener('click', () => {
-            difficulty = document.getElementById('difficulty').value;
-            generateQuestions();
-            displayQuestion();
-            document.getElementById('level-container').classList.add('hidden');
-            quizContainer.classList.remove('hidden');
-            submitBtn.classList.remove('hidden');
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let currentQuestionIndex = 0;
+        let correctAnswers = 0;
+        let currentQuestions = [];
+        const totalQuestions = 20;
+
+        const startQuizBtn = document.getElementById("start-quiz-btn");
+        const quizContainer = document.getElementById("quiz-container");
+        const levelContainer = document.getElementById("level-container");
+        const questionElement = document.getElementById("question");
+        const optionButtons = document.querySelectorAll(".option-btn");
+        const progressBar = document.getElementById("progress-bar");
+        const progressPercentage = document.getElementById("progress-percentage");
+        const popup = document.getElementById("popup");
+        const solutionElement = document.getElementById("solution");
+        const closePopupBtn = document.getElementById("close-popup-btn");
+
+        const correctSound = document.getElementById('correct-sound');
+        const wrongSound = document.getElementById('wrong-sound');
+        const backgroundMusic = document.getElementById('background-music');
+        const printCertificateLink = document.getElementById('certificate-container');
+
+        let currentLevel = "easy";
+
+        startQuizBtn.addEventListener("click", startQuiz);
+        optionButtons.forEach((button, index) => {
+            button.addEventListener("click", () => selectAnswer(index));
         });
+        closePopupBtn.addEventListener("click", closePopup);
 
-        function generateQuestion() {
-            let num1, num2, operation;
+        function startQuiz() {
+            levelContainer.classList.add("hidden");
+            quizContainer.classList.remove("hidden");
 
-            switch (difficulty) {
-                case "easy":
-                    num1 = Math.floor(Math.random() * 10) + 1;
-                    num2 = Math.floor(Math.random() * 10) + 1;
-                    break;
-                case "medium":
-                    num1 = Math.floor(Math.random() * 100) + 1;
-                    num2 = Math.floor(Math.random() * 100) + 1;
-                    break;
-                case "hard":
-                    num1 = Math.floor(Math.random() * 1000) + 1;
-                    num2 = Math.floor(Math.random() * 1000) + 1;
-                    break;
-            }
+            backgroundMusic.play();  // Play background music
 
-            operation = Math.random() < 0.5 ? '+' : '-';
-            const question = `${num1} ${operation} ${num2}`;
-            questions.push({ question, answer: eval(question) });
+            const difficulty = currentLevel;
+            currentQuestions = generateQuestions(difficulty);
+            showQuestion();
         }
 
-        function generateQuestions() {
+        function generateQuestions(level) {
+            const questions = [];
             for (let i = 0; i < totalQuestions; i++) {
-                generateQuestion();
+                let num1, num2, operation, question, correctAnswer, options, explanation;
+                switch (level) {
+                    case 'easy':
+                        num1 = Math.floor(Math.random() * 10) + 1;
+                        num2 = Math.floor(Math.random() * 10) + 1;
+                        break;
+                    case 'average':
+                        num1 = Math.floor(Math.random() * 20) + 10;
+                        num2 = Math.floor(Math.random() * 10) + 1;
+                        break;
+                    case 'hard':
+                        num1 = Math.floor(Math.random() * 50) + 10;
+                        num2 = Math.floor(Math.random() * 25) + 1;
+                        break;
+                }
+
+                // Randomly choose one of the operations
+                const operations = ['+', '-', '*', '/'];
+                operation = operations[Math.floor(Math.random() * operations.length)];
+
+                switch (operation) {
+                    case '+':
+                        question = `What is ${num1} + ${num2}?`;
+                        correctAnswer = num1 + num2;
+                        explanation = `To find the sum, we add ${num1} and ${num2}. The answer is ${correctAnswer}.`;
+                        break;
+                    case '-':
+                        question = `What is ${num1} - ${num2}?`;
+                        correctAnswer = num1 - num2;
+                        explanation = `To find the difference, we subtract ${num2} from ${num1}. The answer is ${correctAnswer}.`;
+                        break;
+                    case '*':
+                        question = `What is ${num1} * ${num2}?`;
+                        correctAnswer = num1 * num2;
+                        explanation = `To find the product, we multiply ${num1} by ${num2}. The answer is ${correctAnswer}.`;
+                        break;
+                    case '/':
+                        // Ensure the division gives a whole number
+                        num2 = Math.floor(Math.random() * 9) + 1; // Avoid division by zero
+                        correctAnswer = num1 * num2; // Set a multiple of num2 to ensure exact division
+                        question = `What is ${correctAnswer} / ${num2}?`;
+                        explanation = `To find the quotient, we divide ${correctAnswer} by ${num2}. The answer is ${correctAnswer / num2}.`;
+                        break;
+                }
+
+                options = generateOptions(correctAnswer, operation, num2);
+                questions.push({ question, options, correctAnswer, explanation });
             }
+            return questions;
         }
 
-        function displayQuestion() {
-            quizContainer.style.transform = 'scale(1.1)';
-            setTimeout(() => quizContainer.style.transform = 'scale(1)', 200);
-            document.getElementById('question').textContent = questions[currentQuestion].question;
+        function generateOptions(correctAnswer, operation, num2) {
+            const options = new Set();
+            options.add(correctAnswer);
+            while (options.size < 4) {
+                let incorrectAnswer;
+                switch (operation) {
+                    case '+':
+                        incorrectAnswer = (correctAnswer + Math.floor(Math.random() * 10) + 1);
+                        break;
+                    case '-':
+                        incorrectAnswer = (correctAnswer - Math.floor(Math.random() * 10) - 1);
+                        break;
+                    case '*':
+                        incorrectAnswer = (correctAnswer + Math.floor(Math.random() * 10) + 1);
+                        break;
+                    case '/':
+                        incorrectAnswer = (Math.floor(Math.random() * (correctAnswer + 10) + 1));
+                        break;
+                }
+                options.add(incorrectAnswer);
+            }
+            return Array.from(options).sort(() => Math.random() - 0.5); // Shuffle options
         }
 
-        submitBtn.addEventListener('click', () => {
-            const userAnswer = parseInt(document.getElementById('answer').value);
-            if (userAnswer === questions[currentQuestion].answer) {
-                score++;
-            }
-            currentQuestion++;
-            if (currentQuestion < totalQuestions) {
-                displayQuestion();
-                document.getElementById('answer').value = '';
+        function showQuestion() {
+            const currentQuestion = currentQuestions[currentQuestionIndex];
+            questionElement.innerText = currentQuestion.question;
+            optionButtons.forEach((button, index) => {
+                button.innerText = currentQuestion.options[index];
+            });
+            updateProgress();
+        }
+
+        function selectAnswer(index) {
+            const selectedOption = currentQuestions[currentQuestionIndex].options[index];
+            const correctAnswer = currentQuestions[currentQuestionIndex].correctAnswer;
+            const explanation = currentQuestions[currentQuestionIndex].explanation;
+
+            if (selectedOption == correctAnswer) {
+                correctAnswers++;
+                correctSound.play(); // Play correct sound
+                showCorrectPopup(explanation);
             } else {
-                showResult();
+                wrongSound.play(); // Play wrong sound
+                showWrongPopup(correctAnswer, explanation);
             }
-        });
-
-        function showResult() {
-            const resultDiv = document.getElementById('result');
-            const scorePercentage = (score / totalQuestions) * 100;
-            resultDiv.textContent = `Your score is: ${score} out of ${totalQuestions} (${scorePercentage.toFixed(2)}%)`;
-            resultDiv.classList.remove('hidden');
-            submitBtn.classList.add('hidden');
-            quizContainer.classList.add('hidden');
-
-            // Save progress
-            const progress = JSON.parse(localStorage.getItem('progress')) || {};
-            progress[difficulty] = (progress[difficulty] || 0) + 1; // Increment level completion
-            localStorage.setItem('progress', JSON.stringify(progress));
-
-            // Check if all levels are completed
-            if (scorePercentage >= 85) {
-                generateCertificate();
+            currentQuestionIndex++;
+            if (currentQuestionIndex < currentQuestions.length) {
+                showQuestion();
+            } else {
+                endQuiz();
             }
         }
 
-        function generateCertificate() {
-            const name = prompt("Enter your name for the certificate:");
-            if (name) {
-                alert(`Certificate of Completion:\n\nThis certifies that ${name} has completed the Integer Quiz with a score of ${score} out of ${totalQuestions}.`);
-                // Here you can implement the download logic using a template
-            }
+        function showCorrectPopup(explanation) {
+            solutionElement.innerText = `Correct! ${explanation}`;
+            popup.style.display = "block";
+        }
+
+        function showWrongPopup(correctAnswer, explanation) {
+            solutionElement.innerText = `Wrong! The correct answer is: ${correctAnswer}. ${explanation}`;
+            popup.style.display = "block";
+        }
+
+        function closePopup() {
+            popup.style.display = "none";
+        }
+
+        function updateProgress() {
+            const percentage = ((currentQuestionIndex + 1) / totalQuestions) * 100;
+            progressBar.style.width = percentage + "%";
+            progressPercentage.innerText = `Progress: ${Math.round(percentage)}%`;
+        }
+
+        function endQuiz() {
+            backgroundMusic.pause(); // Stop background music
+            backgroundMusic.currentTime = 0; // Reset music
+            printCertificateLink.style.display = "block"; // Show print certificate link
+            alert(`Quiz completed! You got ${correctAnswers} out of ${totalQuestions} correct.`);
+            // Optionally store results in Firebase here
+        }
+
+        function printCertificate() {
+            // Logic to generate and print certificate
+            window.print();
         }
     </script>
 </body>
