@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>Integer Mastery Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
     <style>
         body {
             margin: 0;
@@ -161,6 +164,14 @@
             display: block; /* Ensures it takes full width */
         }
 
+        #download-btn {
+            display: none; /* Initially hidden */
+            margin-top: 10px;
+            cursor: pointer;
+            color: #5D8BF4;
+            text-decoration: underline;
+        }
+
         @media print {
             body {
                 margin: 0;
@@ -204,7 +215,12 @@
 
     <div class="dashboard">
         <h2>Available Games</h2>
-        <div class="status-bar">Progress: 0% Completed</div>
+        <div class="status-bar">
+            <div class="progress-bar">
+                <div class="progress" id="progress"></div>
+            </div>
+            <span id="progress-text">Progress: 0% Completed</span>
+        </div>
         <ul class="game-list">
             <li>
                 <button onclick="location.href='quiz.html'">
@@ -232,7 +248,8 @@
                 </button>
             </li>
         </ul>
-        <span class="generate-cert" onclick="checkCompletion()">Generate Certificate</span>
+        <span class="generate-cert" id="cert-btn" onclick="checkCompletion()">Generate Certificate</span>
+        <span id="download-btn" onclick="downloadCertificate()">Download Certificate</span>
     </div>
 
     <div id="certificate">
@@ -241,40 +258,84 @@
         <p id="cert-name"></p>
         <p>Congratulations! You have completed all games.</p>
         <p>Average Score: <span id="avg-score"></span></p>
-        <button onclick="printCertificate()">Print Certificate</button>
     </div>
 
     <script>
-        let gamesCompleted = false;
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBmWpORtzUDjJaq_BW-Qsv69xYl6yJE2do",
+            authDomain: "gamefi-integer.firebaseapp.com",
+            databaseURL: "https://gamefi-integer-default-rtdb.firebaseio.com",
+            projectId: "gamefi-integer",
+            storageBucket: "gamefi-integer.appspot.com",
+            messagingSenderId: "80013137572",
+            appId: "1:80013137572:web:272b8578de6f6c6e7065a3",
+            measurementId: "G-12P2YRQZ4L"
+        };
 
-        function showCertificate() {
-            const name = prompt("Enter your name:");
-            const avgScore = Math.floor(Math.random() * 100);
-            document.getElementById('cert-name').textContent = `This certificate is awarded to: ${name}`;
-            document.getElementById('avg-score').textContent = `${avgScore}%`;
-            document.getElementById('certificate').style.display = 'block';
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let gamesCompleted = 0;
+        const totalGames = 5; // Total number of games
+
+        // Simulate progress
+        function updateProgress() {
+            const progress = (gamesCompleted / totalGames) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+            document.getElementById('progress-text').innerText = 'Progress: ' + progress.toFixed(0) + '% Completed';
         }
 
+        // Check completion status
         function checkCompletion() {
-            gamesCompleted = true; 
-            if (gamesCompleted) {
-                showCertificate();
+            if (gamesCompleted === totalGames) {
+                document.getElementById('cert-name').innerText = "Your Name Here"; // Replace with actual user name
+                document.getElementById('avg-score').innerText = "90%"; // Replace with actual average score
+                document.getElementById('certificate').style.display = 'block';
+                document.getElementById('download-btn').style.display = 'block'; // Show download button
+                updateProgress();
             } else {
-                alert("Please complete all games before generating the certificate.");
+                alert("Complete all games to generate the certificate.");
             }
-        }
-
-        function printCertificate() {
-            const printContents = document.getElementById('certificate').innerHTML;
-            const originalContents = document.body.innerHTML;
-            document.body.innerHTML = printContents;
-            window.print();
-            document.body.innerHTML = originalContents;
-            window.location.reload();
         }
 
         function closeCertificate() {
             document.getElementById('certificate').style.display = 'none';
+            document.getElementById('download-btn').style.display = 'none'; // Hide download button
+        }
+
+        function downloadCertificate() {
+            const certificate = document.getElementById('certificate');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const width = 600;
+            const height = 400;
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Draw the background image
+            const img = new Image();
+            img.src = 'https://png.pngtree.com/thumb_back/fh260/background/20230411/pngtree-certificate-golden-vintage-leaf-background-image_2363875.jpg';
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Draw the certificate text
+                ctx.fillStyle = 'black';
+                ctx.font = 'bold 30px Poppins';
+                ctx.fillText('Certificate of Completion', width / 2, height / 2 - 40, width);
+                ctx.font = '24px Poppins';
+                ctx.fillText(document.getElementById('cert-name').innerText, width / 2, height / 2, width);
+                ctx.fillText('Congratulations! You have completed all games.', width / 2, height / 2 + 40, width);
+                ctx.fillText('Average Score: ' + document.getElementById('avg-score').innerText, width / 2, height / 2 + 80, width);
+
+                // Create a download link
+                const link = document.createElement('a');
+                link.download = 'certificate.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            };
         }
     </script>
 </body>
