@@ -1,108 +1,122 @@
-const startQuizBtn = document.getElementById('startQuizBtn');
-const quizGame = document.getElementById('quizGame');
-const quizMessage = document.getElementById('quizMessage');
+document.addEventListener('DOMContentLoaded', function() {
+    const levelSelection = document.getElementById('levelSelection');
+    const quizGame = document.getElementById('quizGame');
+    const startQuizBtn = document.getElementById('startQuizBtn');
+    const quizMessage = document.getElementById('quizMessage');
+    
+    let currentLevel = null;
+    let questions = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
 
-let questions = [];
-let currentQuestionIndex = 0;
-let score = 0;
-let totalQuestions = 50;
+    const levels = {
+        easy: { min: 1, max: 100 },
+        average: { min: 101, max: 500 },
+        difficult: { min: 501, max: 1000 }
+    };
 
-// Generate random math questions based on difficulty
-function generateQuestions() {
-    const difficulties = ['easy', 'average', 'hard'];
+    // Handle level selection
+    document.querySelectorAll('.level-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            currentLevel = this.getAttribute('data-level');
+            generateQuestions(currentLevel);
+            levelSelection.style.display = 'none';
+            quizGame.style.display = 'block';
+            startQuizBtn.style.display = 'block';
+        });
+    });
 
-    for (let i = 0; i < totalQuestions; i++) {
-        let difficulty = difficulties[Math.floor(i / (totalQuestions / 3))]; // Divides questions equally into 3 difficulty levels
-        let question = generateMathProblem(difficulty);
-        questions.push(question);
-    }
-}
+    // Handle starting quiz
+    startQuizBtn.addEventListener('click', function() {
+        startQuiz();
+    });
 
-// Generate a single math problem based on difficulty
-function generateMathProblem(difficulty) {
-    let num1, num2, operation, question, correctAnswer;
-
-    if (difficulty === 'easy') {
-        num1 = Math.floor(Math.random() * 100) + 1;
-        num2 = Math.floor(Math.random() * 100) + 1;
-    } else if (difficulty === 'average') {
-        num1 = Math.floor(Math.random() * 400) + 101;
-        num2 = Math.floor(Math.random() * 400) + 101;
-    } else if (difficulty === 'hard') {
-        num1 = Math.floor(Math.random() * 500) + 501;
-        num2 = Math.floor(Math.random() * 500) + 501;
-    }
-
-    const operations = ['+', '-', '*', '/'];
-    operation = operations[Math.floor(Math.random() * operations.length)];
-
-    switch (operation) {
-        case '+':
-            correctAnswer = num1 + num2;
-            break;
-        case '-':
-            correctAnswer = num1 - num2;
-            break;
-        case '*':
-            correctAnswer = num1 * num2;
-            break;
-        case '/':
-            correctAnswer = Math.floor(num1 / num2); // Integer division
-            break;
+    // Generate questions based on level
+    function generateQuestions(level) {
+        const { min, max } = levels[level];
+        questions = [];
+        for (let i = 0; i < 20; i++) {
+            const num1 = Math.floor(Math.random() * (max - min + 1)) + min;
+            const num2 = Math.floor(Math.random() * (max - min + 1)) + min;
+            const question = {
+                text: `${num1} + ${num2} = ?`,
+                correctAnswer: num1 + num2,
+                choices: generateChoices(num1 + num2),
+                explanation: `The correct answer is ${num1} + ${num2} = ${num1 + num2}` // Add explanation here
+            };
+            questions.push(question);
+        }
     }
 
-    question = `What is ${num1} ${operation} ${num2}?`;
+    // Generate random choices for a question
+    function generateChoices(correctAnswer) {
+        const choices = new Set([correctAnswer]);
+        while (choices.size < 4) {
+            choices.add(Math.floor(Math.random() * 1000));
+        }
+        return Array.from(choices);
+    }
 
-    return { question, correctAnswer };
-}
+    // Start the quiz
+    function startQuiz() {
+        currentQuestionIndex = 0;
+        score = 0;
+        displayQuestion();
+        startQuizBtn.style.display = 'none';
+    }
 
-// Show next question
-function showQuestion() {
-    if (currentQuestionIndex < totalQuestions) {
-        const currentQuestion = questions[currentQuestionIndex];
+    // Display current question
+    function displayQuestion() {
+        const question = questions[currentQuestionIndex];
         quizGame.innerHTML = `
-            <div class="question">${currentQuestion.question}</div>
-            <input type="number" id="userAnswer" class="answer-input" placeholder="Your answer">
-            <button id="submitAnswerBtn" class="submit-btn">Submit</button>
+            <p>Question ${currentQuestionIndex + 1}: ${question.text}</p>
+            <div class="choices">
+                ${question.choices.map(choice => `<button class="choice-btn">${choice}</button>`).join('')}
+            </div>
         `;
-        document.getElementById('submitAnswerBtn').addEventListener('click', checkAnswer);
-    } else {
-        endQuiz();
-    }
-}
-
-// Check if the user's answer is correct
-function checkAnswer() {
-    const userAnswer = parseInt(document.getElementById('userAnswer').value);
-    const correctAnswer = questions[currentQuestionIndex].correctAnswer;
-
-    if (userAnswer === correctAnswer) {
-        score++;
-        quizMessage.textContent = 'Correct!';
-    } else {
-        quizMessage.textContent = `Wrong! The correct answer was ${correctAnswer}.`;
+        
+        document.querySelectorAll('.choice-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const selectedAnswer = parseInt(this.textContent);
+                if (selectedAnswer === question.correctAnswer) {
+                    score++;
+                    nextQuestion();
+                } else {
+                    displayCorrection(question.explanation);
+                }
+            });
+        });
     }
 
-    currentQuestionIndex++;
-    setTimeout(() => {
-        quizMessage.textContent = '';
-        showQuestion();
-    }, 1000); // Delay before showing the next question
-}
+    // Show the correct answer when the user makes a mistake
+    function displayCorrection(explanation) {
+        quizGame.innerHTML += `
+            <div class="correction">
+                <p class="explanation">${explanation}</p>
+                <button class="next-btn">Next Question</button>
+            </div>
+        `;
 
-// Start the quiz
-startQuizBtn.addEventListener('click', () => {
-    startQuizBtn.style.display = 'none';
-    quizGame.style.display = 'block';
-    generateQuestions();
-    showQuestion();
+        document.querySelector('.next-btn').addEventListener('click', function() {
+            nextQuestion();
+        });
+    }
+
+    // Move to the next question
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.length) {
+            displayQuestion();
+        } else {
+            endQuiz();
+        }
+    }
+
+    // End the quiz and reset for level selection
+    function endQuiz() {
+        quizMessage.textContent = `You completed the quiz! Your score: ${score}/20`;
+        quizGame.style.display = 'none';
+        startQuizBtn.style.display = 'none';
+        levelSelection.style.display = 'block';
+    }
 });
-
-// End the quiz and show results
-function endQuiz() {
-    quizGame.innerHTML = `
-        <h2>Quiz Completed!</h2>
-        <p>Your score: ${score} / ${totalQuestions}</p>
-        <button onclick="location.reload()" class="start-btn">Play Again</button>
-    `;
-}
