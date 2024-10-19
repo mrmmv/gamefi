@@ -57,6 +57,15 @@ document.addEventListener('DOMContentLoaded', function() {
         return Array.from(choices);
     }
 
+    // Utility function to shuffle an array (Fisher-Yates algorithm)
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+        }
+        return array;
+    }
+
     // Start the quiz
     function startQuiz() {
         currentQuestionIndex = 0;
@@ -68,10 +77,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Display current question
     function displayQuestion() {
         const question = questions[currentQuestionIndex];
+        
+        // Shuffle the choices before displaying
+        const shuffledChoices = shuffle(question.choices);
+
         quizGame.innerHTML = `
             <p>Question ${currentQuestionIndex + 1}: ${question.text}</p>
             <div class="choices">
-                ${question.choices.map(choice => `<button class="choice-btn">${choice}</button>`).join('')}
+                ${shuffledChoices.map(choice => `<button class="choice-btn">${choice}</button>`).join('')}
             </div>
         `;
         
