@@ -23,28 +23,36 @@ const winningConditions = [
 // Generate a random math problem
 function generateMathProblem() {
     const operations = ['+', '-', '*', '/'];
-    const num1 = Math.floor(Math.random() * 20) + 1;
-    const num2 = Math.floor(Math.random() * 100) + 1;
-    const operation = operations[Math.floor(Math.random() * operations.length)];
+    let num1, num2, operation, problem, correctAnswer;
 
-    let problem = `${num1} ${operation} ${num2}`;
-    let correctAnswer;
+    // Generate operation
+    operation = operations[Math.floor(Math.random() * operations.length)];
 
-    switch (operation) {
-        case '+':
-            correctAnswer = num1 + num2;
-            break;
-        case '-':
-            correctAnswer = num1 - num2;
-            break;
-        case '*':
-            correctAnswer = num1 * num2;
-            break;
-        case '/':
-            correctAnswer = Math.floor(num1 / num2); // Integer division
-            break;
+    // Ensure that division does not produce zero
+    if (operation === '/') {
+        num2 = Math.floor(Math.random() * (50 - (-20) + 1)) + (-20);
+        // Ensure num2 is not zero and num1 is a multiple of num2
+        do {
+            num1 = Math.floor(Math.random() * (50 - (-20) + 1)) + (-20);
+        } while (num2 === 0 || num1 % num2 !== 0);
+        correctAnswer = num1 / num2;
+    } else {
+        num1 = Math.floor(Math.random() * (50 - (-20) + 1)) + (-20);
+        num2 = Math.floor(Math.random() * (50 - (-20) + 1)) + (-20);
+        switch (operation) {
+            case '+':
+                correctAnswer = num1 + num2;
+                break;
+            case '-':
+                correctAnswer = num1 - num2;
+                break;
+            case '*':
+                correctAnswer = num1 * num2;
+                break;
+        }
     }
 
+    problem = `${num1} ${operation} ${num2}`;
     return { problem, correctAnswer };
 }
 
@@ -58,19 +66,21 @@ gameBoard.addEventListener('click', (event) => {
 
     if (board[index] === '' && gameActive) {
         const userAnswer = parseInt(answerInput.value);
-        
+
+        // Check if the answer is correct
         if (userAnswer === currentProblem.correctAnswer) {
             board[index] = currentPlayer;
             clickedCell.textContent = currentPlayer;
             checkForWinner();
-            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-            gameMessage.textContent = `Player ${currentPlayer}'s turn!`;
-            currentProblem = generateMathProblem();
-            mathProblemDiv.textContent = `Solve: ${currentProblem.problem}`;
         } else {
-            gameMessage.textContent = `Wrong answer! Player ${currentPlayer}, try again!`;
+            // Show message for wrong answer
+            gameMessage.textContent = `Wrong answer! Player ${currentPlayer}, it's now Player ${currentPlayer === 'X' ? 'O' : 'X'}'s turn.`;
         }
 
+        // Switch to the next player regardless of the answer correctness
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        currentProblem = generateMathProblem();
+        mathProblemDiv.textContent = `Solve: ${currentProblem.problem}`;
         answerInput.value = '';
     }
 });
@@ -86,9 +96,11 @@ function checkForWinner() {
     }
 
     if (roundWon) {
+        alert(`Congratulations! Player ${currentPlayer} wins!`); // Pop-up message
         gameMessage.textContent = `Player ${currentPlayer} wins!`;
         gameActive = false;
     } else if (!board.includes('')) {
+        alert('It\'s a tie!'); // Pop-up message for tie
         gameMessage.textContent = 'It\'s a tie!';
         gameActive = false;
     }
