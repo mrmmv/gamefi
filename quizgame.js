@@ -10,9 +10,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let score = 0;
 
     const levels = {
-        easy: { min: 1, max: 100 },
-        average: { min: 101, max: 500 },
-        difficult: { min: 501, max: 1000 }
+        easy: { min: 1, max: 20 },
+        average: { min: 21, max: 60 },
+        difficult: { min: 61, max: 100 }
     };
 
     // Handle level selection
