@@ -23,7 +23,7 @@ const winningConditions = [
 // Generate a random math problem
 function generateMathProblem() {
     const operations = ['+', '-', '*', '/'];
-    const num1 = Math.floor(Math.random() * 100) + 1;
+    const num1 = Math.floor(Math.random() * 20) + 1;
     const num2 = Math.floor(Math.random() * 100) + 1;
     const operation = operations[Math.floor(Math.random() * operations.length)];
 
