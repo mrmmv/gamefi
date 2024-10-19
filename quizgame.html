@@ -12,13 +12,26 @@
             <h1>Game Ka Na Ba?</h1>
             <p>Test your skills in integers with this quiz game!</p>
         </div>
-        <div id="quizGame" class="quiz-box">
+
+        <!-- Level Selection Section -->
+        <div id="levelSelection" class="level-box">
+            <h2>Select Difficulty</h2>
+            <button class="level-btn" data-level="easy">Easy</button>
+            <button class="level-btn" data-level="average">Average</button>
+            <button class="level-btn" data-level="difficult">Difficult</button>
+        </div>
+
+        <!-- Quiz Game Section -->
+        <div id="quizGame" class="quiz-box" style="display: none;">
             <!-- Questions and choices will be inserted dynamically here -->
         </div>
-        <button id="startQuizBtn" class="start-btn">Start Quiz</button>
+
+        <button id="startQuizBtn" class="start-btn" style="display: none;">Start Quiz</button>
         <p id="quizMessage" class="message"></p>
+
         <a href="main.html" class="back-link">Back to Main Menu</a>
     </div>
+
     <script src="quizgame.js"></script>
 </body>
 </html>
