@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integer Mastery Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', Arial, sans-serif;
+            background: linear-gradient(135deg, #85E3FF 30%, #FFD8A8 70%);
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            animation: fadeIn 1s;
+        }
+
+        h1 {
+            margin: 20px 0;
+            text-align: center;
+            color: #5D8BF4;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+        }
+
+        .logo {
+            width: 150px;
+            height: 150px;
+            background-image: url('https://as1.ftcdn.net/v2/jpg/02/16/91/30/1000_F_216913083_AmMZHcKvgU1InC9vpeDVw6qLDGbBF1AF.jpg'); /* Update this with the correct logo image */
+            background-size: cover;
+            background-position: center;
+            border-radius: 50%;
+            margin: 10px auto;
+            animation: rotate 4s infinite linear;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .dashboard {
+            width: 100%;
+            max-width: 800px;
+            background: linear-gradient(to right, #FFD8A8, #FFB7A8);
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            transition: transform 0.2s;
+            position: relative;
+            text-align: center;
+        }
+
+        .dashboard:hover {
+            transform: scale(1.05);
+        }
+
+        .game-list {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .game-list li {
+            margin: 5px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #FF6F61, #D83B0E);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.3s;
+            width: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            text-transform: uppercase;
+        }
+
+        button img {
+            margin-right: 8px;
+            width: 24px;
+            height: 24px;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #D83B0E, #FF6F61);
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .dashboard {
+                padding: 20px;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Integer Mastery Dashboard</h1>
+    <div class="logo"></div>
+
+    <div class="dashboard">
+        <h2>Available Games</h2>
+        <ul class="game-list">
+            <li>
+                <button onclick="location.href='quizgame.html'">
+                    <img src="src/Pilipinas 2C_Game_Ka_Na_Ba_Logo_2004.jpg" alt="Game Ka Na Icon"> Game Ka Na?
+                </button>
+            </li>
+            <li>
+                <button onclick="location.href='tictactoe.html'">
+                    <img src="src/tictactoe.png" alt="Tic Tac Toe Icon"> Tic Tac Toe
+                </button>
+            </li>
+            <li>
+                <button onclick="location.href='snakeandladders.html'">
+                    <img src="src/sanke and laddr.jpg" alt="Snake and Ladder Icon"> Snake and Ladder
+                </button>
+            </li>
+        </ul>
+    </div>
+</body>
+</html>
